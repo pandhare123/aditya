@@ -1,0 +1,12 @@
+
+
+CREATE COMPUTE MODULE app2_Compute
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		DECLARE data ROW;
+		SET Environment.entitle.values[] = SELECT A FROM Database.ESBACCOUNTSMAPPING AS A WHERE A.accounttype='PayOut';
+		SET OutputRoot.JSON.Data.result[] = Environment.entitle.values[];
+--		SET OutputRoot.JSON.Data.result = 'This is application2';
+		RETURN TRUE;
+	END;
+END MODULE;
