@@ -36,4 +36,3 @@ RMSS_Gateway_Application          RMSSGateway                        https-serve
 Taxonomy75V21Application          TaxonomyV21MediationWeb            https-server.conf-no-cache-mq.yaml  Taxonomy      0.3
 TaxonomyV31Application            TaxonomyV31MediationWeb            https-server.conf-no-cache-mq.yaml  Taxonomy      0.3
 TaxonomyV3Application_INTOnly     TaxonomyV3MediationWeb             https-server.conf-no-cache-mq.yaml  Taxonomy      0.3
-Total                             9.3
