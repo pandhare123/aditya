@@ -1,0 +1,77 @@
+def Application
+def server_conf
+def cpu
+def COMMITID
+pipeline {
+    agent any
+    environment {
+        mqsicreatebar= "/opt/ibm/ace-11.0.0.11/tools/mqsicreatebar"
+        artifacts= "/home/openshiftadmin/Artifacts"
+        cp4i_config= "BARfiles/CP4I_Configuration/INT"
+    }
+    stages{
+        stage("Azure Repo"){
+            steps{
+               echo "Azure Repo"
+               git branch: 'main', credentialsId: 'rkanakamedala', url: 'https://deloittebsg.visualstudio.com/SOA/_git/SOA_ACE_CP4I'
+               sh 'git rev-parse HEAD > .git/commit-id'
+               COMMITID = readFile('.git/commit-id')
+               script {
+                   Application= sh(script: "grep Group_Name $WORKSPACE/$cp4i_config/Config.properties | awk \'{print \$1}\' | xargs",returnStdout: true).trim()
+                   server_conf= sh(script: "grep Group_Name $WORKSPACE/$cp4i_config/Config.properties | awk \'{print \$3}\' | head -1",returnStdout: true).trim()
+                   cpu= sh(script: "grep Group_Name $WORKSPACE/$cp4i_config/Config.properties | awk \'{print \$NF}\' | head -1",returnStdout: true).trim()
+               }
+            }
+        }
+        stage("Building"){
+            steps{
+                echo "Building"
+                sh '$mqsicreatebar -data -b $artifacts/$BarName#$BUILD_NUMBER.bar -a $Application_Name -cleanbuild'
+                script {
+                    sh '''
+                            #!/bin/bash
+                            for n in $Application_Name
+                            do
+                           mqsiapplybaroverride -b /home/openshiftadmin/Artifacts/$BarName#$BUILD_NUMBER.bar -p $WORKSPACE/BARfiles/Properties/INT/INT_$n.properties -r
+                            done
+                    '''
+                }
+            }
+        }
+        stage("Containerization"){
+            steps{
+                echo "Containerization"
+                sh 'mv /home/openshiftadmin/Artifacts/$BarName#$BUILD_NUMBER.bar $WORKSPACE/$cp4iconfig/'
+                sh 'cd $WORKSPACE/$cp4iconfig && mv Policies.zip Policies.bar'
+                sh 'docker build -t default-route-openshift-image-registry.apps.intcluster.intocp.deloitte.com/int-cp4i/$Image_Name_32:$COMMITID-$BUILD_NUMBER --build-arg Application=$BarName#$BUILD_NUMBER.bar --build-arg server_conf=$SERVER_CONF -f docker.ace .'
+                sh '/usr/local/bin/oc login https://api.intcluster.intocp.deloitte.com:6443 -u $kubeadmin -p $kubeadmin_pwd --insecure-skip-tls-verify=true'
+                sh 'cd /usr/local/bin/ && docker login https://default-route-openshift-image-registry.apps.intcluster.intocp.deloitte.com -u kubeadmin -p $(./oc whoami -t)'
+                sh 'docker push default-route-openshift-image-registry.apps.intcluster.intocp.deloitte.com/int-cp4i/$Image_Name_32:$COMMITID-$BUILD_NUMBER'
+                sh 'docker rmi default-route-openshift-image-registry.apps.intcluster.intocp.deloitte.com/int-cp4i/$Image_Name_32:$COMMITID-$BUILD_NUMBER'
+                sh 'docker rmi $Image_Name_32:$COMMITID-$BUILD_NUMBER'
+            }
+        }
+        stage("Configuration and Deploy"){
+            steps{
+                echo "Configuration and Deploy"
+                sh 'cp $cp4iconfig/ace-deploy.yaml $WORKSPACE/$cp4iconfig/ace-deploy-$BUILD_NUMBER.yaml'
+                sh 'sed -i -e "s/{{Cpu_Name}}/$cpu/g" $WORKSPACE/$cp4iconfig/ace-deploy-$BUILD_NUMBER.yaml'
+                sh 'sed -i -e "s/{{Memory_Name}}/2000M/g" $WORKSPACE/$cp4iconfig/ace-deploy-$BUILD_NUMBER.yaml'
+                sh 'sed -i -e "s/{{Application_Name}}/$Image_Name_32/g" $WORKSPACE/$cp4iconfig/ace-deploy-$BUILD_NUMBER.yaml'
+                sh 'sed -i -e "s/{{Image_Name}}/$Image_Name_32/g" $WORKSPACE/$cp4iconfig/ace-deploy-$BUILD_NUMBER.yaml'
+                sh 'sed -i -e "s/{{BUILD_NUMBER}}/$COMMITID-$BUILD_NUMBER/g" $WORKSPACE/$cp4iconfig/ace-deploy-$BUILD_NUMBER.yaml'
+                sh '/usr/local/bin/oc apply -f $WORKSPACE/$cp4iconfig/ace-deploy-$BUILD_NUMBER.yaml'
+            }
+        }
+        stage("Clean Up"){
+            steps{
+                echo "Clean Up"
+                sh 'rm -rf $WORKSPACE/$cp4iconfig/ace-deploy-$BUILD_NUMBER.yaml'
+            }
+        }
+    }
+}
+
+	
+	
+	
