@@ -1,9 +1,0 @@
-
-
-CREATE COMPUTE MODULE app1_Compute
-	CREATE FUNCTION Main() RETURNS BOOLEAN
-	BEGIN
-		SET OutputRoot.XMLNSC.app1= 'This is app1';		
-		RETURN TRUE;
-	END;
-END MODULE;
