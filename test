@@ -1,5 +1,0 @@
-Application_Name                  Image_Name                         Server_Conf                         Group_Name    Working_Group_CPU
-app1                              DNBV1MediationWeb                  https-server.conf-cache-mq.yaml     Clients       400
-app2                              OCMV1MediationWeb                  https-server.conf-no-cache-mq.yaml  Clients       
-app3                              OCMV2MediationWeb                  https-server.conf-no-cache-mq.yaml  master        200
-app4                              OCMV3MediationWeb                  https-server.conf-cache-mq.yaml     master       
