@@ -1,6 +1,0 @@
-<project name="learnant" baseid=".">
-     <target name="echohelloworld">
-       <echo>hello world!!!</echo>
-      </target>
-</project>
-         
