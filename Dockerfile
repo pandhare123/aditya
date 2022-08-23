@@ -1,1 +1,2 @@
-ffnjfnfjn
+FROM ubuntu
+
