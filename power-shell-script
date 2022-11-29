@@ -18,7 +18,7 @@ $pullRequest = @{
 
 $pullRequestJson = ($pullRequest | ConvertTo-Json -Depth 5)
 
-Write-Output "Sending a REST call to create a new pull request from develop to master"
+Write-Output "Sending a REST call to create a new pull request from main to master"
 
 # REST call to create a Pull Request
 $pullRequestResult = Invoke-RestMethod -Method POST -Headers $headers -Body $pullRequestJson -Uri $pullRequestUrl;
